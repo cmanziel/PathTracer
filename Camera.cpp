@@ -96,7 +96,7 @@ rgb Camera::SendRay(point origin, vec3 dir)
 
 	float dist = Ray::point_plane_distance(m_CameraFront, n, hit_point);
 
-	// if the hit_point is behind the far plane then don't color that pixel ith the "hit color"
+	// if the hit_point is behind the far plane then don't color that pixel with the "hit color"
 	//if(dist > m_NearToFarDistance)
 
 	if (t >= 0.0 && dist < m_NearToFarDistance)

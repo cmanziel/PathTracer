@@ -138,3 +138,16 @@ vec3 cross(const vec3& u, const vec3& v)
 
 	return result;
 }
+
+// gen1 e gen2 sono i vettori della base del piano su cui proiettare v
+vec3 project_on_plane(vec3 v, vec3 gen1, vec3 gen2)
+{
+	vec3 projection;
+
+	float dot_gen1 = dot(gen1, v);
+	float dot_gen2 = dot(gen2, v);
+
+	projection = dot_gen1 * gen1 + dot_gen2 * gen2;
+
+	return projection;
+}

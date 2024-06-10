@@ -25,7 +25,7 @@ public:
 private:
 	float m_fov;
 	float m_FocalLength; // near plane is distant m_FocalLength from m_Position
-	float m_NearToFarDistance; // far plane distance from camera
+	float m_NearToFarDistance; // distance between near and far plane
 	int m_ImageWidth;
 	int m_ImageHeight;
 

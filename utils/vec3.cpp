@@ -6,7 +6,7 @@ vec3::vec3()
 
 }
 
-vec3::vec3(float x, float y, float z)
+vec3::vec3(double x, double y, double z)
 	: x(x), y(y), z(z)
 {
 
@@ -33,7 +33,7 @@ vec3& vec3::operator*=(const int scalar)
 	return *this;
 }
 
-vec3& vec3::operator*=(const float scalar)
+vec3& vec3::operator*=(const double scalar)
 {
 	this->x *= scalar;
 	this->y *= scalar;
@@ -58,7 +58,23 @@ vec3& vec3::operator-()
 	return result;
 }
 
-float vec3::length()
+double& vec3::operator[](const int i)
+{
+	assert(i >= 0 && i < 3);
+	switch (i)
+	{
+	case 0:
+		return this->x;
+	case 1:
+		return this->y;
+	case 2:
+		return this->z;
+	default:
+		break;
+	}
+}
+
+double vec3::length()
 {
 	return sqrt(x * x + y * y + z * z);
 }
@@ -88,18 +104,7 @@ vec3 operator-(const vec3 u, const vec3 v)
 	return result;
 }
 
-vec3 operator*(const float s, const vec3 v)
-{
-	vec3 result = vec3();
-
-	result.x = s * v.x;
-	result.y = s * v.y;
-	result.z = s * v.z;
-
-	return result;
-}
-
-vec3 operator*(const vec3 v, const float s)
+vec3 operator*(const double s, const vec3 v)
 {
 	vec3 result;
 
@@ -110,12 +115,34 @@ vec3 operator*(const vec3 v, const float s)
 	return result;
 }
 
+vec3 operator*(const vec3 v, const double s)
+{
+	vec3 result;
+
+	result.x = s * v.x;
+	result.y = s * v.y;
+	result.z = s * v.z;
+
+	return result;
+}
+
+vec3 operator/(const vec3 v, const double s)
+{
+	vec3 result;
+
+	result.x = v.x / s;
+	result.y = v.y / s;
+	result.z = v.z / s;
+
+	return result;
+}
+
 vec3 unit_vector(vec3 v)
 {
 	return v * (1 / v.length());
 }
 
-float dot(const vec3 u, const vec3 v)
+double dot(const vec3 u, const vec3 v)
 {
 	return u.x * v.x + u.y * v.y + u.z * v.z;
 }
@@ -144,8 +171,8 @@ vec3 project_on_plane(vec3 v, vec3 gen1, vec3 gen2)
 {
 	vec3 projection;
 
-	float dot_gen1 = dot(gen1, v);
-	float dot_gen2 = dot(gen2, v);
+	double dot_gen1 = dot(gen1, v);
+	double dot_gen2 = dot(gen2, v);
 
 	projection = dot_gen1 * gen1 + dot_gen2 * gen2;
 

@@ -29,7 +29,7 @@ public:
 
 	vec3 GetWorldPosition() const;
 
-	bool Hit(const Ray& ray, const Camera& camera, double ray_tmin, double ray_tmax, hit_record& hit_data) override;
+	bool Hit(const Ray& ray, Interval tInterval, hit_record& hit_data) override;
 
 	face m_Faces[FACES_PER_BLOCK];
 private:

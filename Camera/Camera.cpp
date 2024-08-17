@@ -2,32 +2,47 @@
 
 float aspect_ratio = 16.0 / 9;
 
-// make viewport grid
-
-Camera::Camera(int image_width)
+Camera::Camera(const char* path)
+	: m_ImageWidth(1000)
 {
-	m_Position = vec3(3, 3, -8.5);
+	m_Position = vec3(5, 5, -8.5);
 	//m_Direction = -m_Position;
-	m_Direction = vec3(-1.0, -0.5, 0.0);
+	m_Direction = vec3(-2.0, -1.0, 0.0);
 	m_fov = 45.0;
 	m_FocalLength = 1.0;
 	m_NearToFarDistance = 99.0;
 
-	m_ImageWidth = image_width;
-	m_ImageHeight = static_cast<int>((double)image_width / aspect_ratio);
+	m_ImageHeight = static_cast<int>((double)m_ImageWidth / aspect_ratio);
+
+	m_tInterval = Interval(0.0, infinity);
+
+	m_ImagePath = path;
+
+	m_ImageData = AllocPNGDataStream();
+
+	if (m_ImageData == NULL)
+		throw std::exception("image data not allocated\n");
 
 	// calculate the grid dimensions here and instantiate the m_Grid bidimensional array (double pointer)
 	m_Grid = (vec3**)malloc(sizeof(vec3*) * m_ImageHeight);
 
 	if (m_Grid == NULL)
 	{
-		printf("error allocating pixel grid");
-		return;
+		throw std::exception("viewport grid not allocated\n");
 	}
 
 	for (int y = 0; y < m_ImageHeight; y++)
 	{
-		m_Grid[y] = (vec3*)malloc(sizeof(vec3) * image_width);
+		m_Grid[y] = (vec3*)malloc(sizeof(vec3) * m_ImageWidth);
+
+		if (m_Grid[y] == NULL)
+		{
+			// if the current row is not allocated, free the ones allocated before and throw an exception
+			for (int j = 0; j < y; j++)
+				free(m_Grid[y]);
+
+			throw std::exception("viewport grid not allocated\n");
+		}
 	}
 }
 
@@ -36,10 +51,21 @@ Camera::Camera(int image_width)
 	* this line is the viewport plane normal, move on this plane the correct distances to find the grid's upper left corner
 */
 
+unsigned char* Camera::AllocPNGDataStream()
+{
+	// loop through grid, sent ray through every pixel, color the pixel
+	int row_size = CHANNELS_PER_PIXEL * m_ImageWidth + 1; // 1 byte for filter method
+	int pixel_data_size = row_size * m_ImageHeight * sizeof(unsigned char);
+	unsigned char* pixel_data = (unsigned char*)malloc(pixel_data_size);
+
+	return pixel_data;
+}
+
+
 void Camera::CreateViewportGrid()
 {
-	float viewport_height = 2.0;
-	float viewport_width = viewport_width = viewport_height * (static_cast<double>(m_ImageWidth) / m_ImageHeight);
+	double viewport_height = 2.0;
+	double viewport_width = viewport_width = viewport_height * (static_cast<double>(m_ImageWidth) / m_ImageHeight);
 
 	vec3 world_up = vec3(0, 1, 0);
 
@@ -73,6 +99,67 @@ void Camera::CreateViewportGrid()
 			m_Grid[v][u] = pixel_center_pos;
 		}
 	}
+}
+
+void Camera::Render(std::vector<Hittable*> world)
+{
+	int row_size = CHANNELS_PER_PIXEL * m_ImageWidth + 1; // 1 byte for filter method
+	for (unsigned int y = 0; y < m_ImageHeight; y++)
+	{
+		unsigned int row_start = y * row_size;
+		unsigned char filter_method = 0x00;
+
+		m_ImageData[row_start] = filter_method;
+
+		for (int x = 0; x < m_ImageWidth; x++)
+		{
+			point rayOrigin = m_Grid[y][x];
+			vec3 dir = rayOrigin - m_Position;
+
+			Ray ray(rayOrigin, dir);
+
+			hit_record hitData;
+			rgb color;
+
+			// problem for all the objects it has to be checked if the ray interescted one of them, and which of them is closer
+
+			hit_record closest;
+			double smallest_t = 0.0;
+			bool hit_anything = false;
+
+			for (Hittable* obj : world)
+			{
+				if (obj->Hit(ray, m_tInterval, hitData))
+				{
+					hit_anything = true;
+
+					if (hitData.t < smallest_t || smallest_t == 0.0)
+					{
+						smallest_t = hitData.t;
+						closest = hitData;
+					}
+				}
+
+				// if nothing was hit set the bcakground color for this pixel's color
+				if (!hit_anything)
+					color = rgb(255, 255, 255);
+				else
+				{
+					color.r = static_cast<uint8_t>(255 * (closest.normal.x + 1) / 2);
+					color.g = static_cast<uint8_t>(255 * (closest.normal.y + 1) / 2);
+					color.b = static_cast<uint8_t>(255 * (closest.normal.z + 1) / 2);
+				}
+			}
+
+			unsigned int index = y * row_size + CHANNELS_PER_PIXEL * x + 1;
+
+			m_ImageData[index] = color.r; index++;
+			m_ImageData[index] = color.g; index++;
+			m_ImageData[index] = color.b; index++;
+		}
+	}
+
+	m_Image = create_image(m_ImageData, m_ImagePath, m_ImageWidth, m_ImageHeight);
 }
 
 int Camera::GetImageHeight()
@@ -114,4 +201,7 @@ Camera::~Camera()
 	}
 
 	free(m_Grid);
+
+	free(m_ImageData);
+	fclose(m_Image);
 }

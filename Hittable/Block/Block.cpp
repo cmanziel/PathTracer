@@ -33,7 +33,7 @@ vec3 Block::GetWorldPosition() const
 	return m_WorldPosition;
 }
 
-bool Block::Hit(const Ray& ray, const Camera& camera, double ray_tmin, double ray_tmax, hit_record& hit_data)
+bool Block::Hit(const Ray& ray, Interval tInterval, hit_record& hit_data)
 {
 	// loop through faces and call their Hit method
 
@@ -46,7 +46,7 @@ bool Block::Hit(const Ray& ray, const Camera& camera, double ray_tmin, double ra
 	{
 		face f = m_Faces[i];
 
-		if (f.plane->Hit(ray, camera, ray_tmin, ray_tmax, hit_data))
+		if (f.plane->Hit(ray, tInterval, hit_data))
 		{
 			// a face plane might be hit by the ray but it should be checked if it was inside the face edges
 			vec3 edgeOffsets(1.0, 1.0, 1.0);

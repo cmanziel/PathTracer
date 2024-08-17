@@ -1,11 +1,9 @@
 #include <stdio.h>
-#include "pnglib.h"
-#include "vec3.h"
-#include "rgb.h"
-#include "Camera.h"
-#include "Ray.h"
 
-#define CHANNELS_PER_PIXEL 3
+#include "Hittable/Block/Block.h"
+#include "Hittable/Sphere/Sphere.h"
+
+#include "Camera/Camera.h"
 
 /* TODO: 
 	* calculate the correct viewport dimension based on focal_length and fov (degrees)
@@ -20,59 +18,40 @@
 
 int main()
 {
-	int width = 256;
+	const char* path = "D:\\39331\\Code\\C++\\PathTracer\\images\\path_10.png";
 
-	// send rays through camera grid and see if they intersect a sphere
+	try 
+	{
+		Camera camera(path);
+		camera.CreateViewportGrid();
 
-	Camera* camera = new Camera(width);
+		Sphere* sphere = new Sphere(vec3(0, 1, -10.0), 1.0);
+		Plane* plane = new Plane(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+		Block* block = new Block(vec3(0, 2, -8.0));
+		Sphere* sphere1 = new Sphere(vec3(0, 1, -5.0), 1.0);
 
-	camera->CreateViewportGrid();
+		std::vector<Hittable*> objects;
 
-	int height = camera->GetImageHeight();
+		objects.push_back(sphere);
+		objects.push_back(plane);
+		objects.push_back(block);
+		objects.push_back(sphere1);
 
-	int row_size = CHANNELS_PER_PIXEL * width + 1; // 1 byte for filter method
-	int pixel_data_size = row_size * height * sizeof(unsigned char);
-	unsigned char* pixel_data = (unsigned char*)malloc(pixel_data_size);
+		camera.Render(objects);
 
-	if (pixel_data == NULL) {
-		printf("pixel data not allocated");
+		for (Hittable* obj : objects)
+		{
+			delete obj;
+		}
+
+		objects.clear();
+
+	}
+	catch (std::exception& e)
+	{
+		printf("%s\n", e.what());
 		return -1;
 	}
-
-	for (int y = 0; y < height; y++)
-	{
-		int row_start = y * row_size;
-
-		unsigned char filter_method = 0x00;
-
-		pixel_data[row_start] = filter_method;
-
-		for (int x = 0; x < width; x++)
-		{
-			// the ray origin is the point in the viewport through which the ray passes
-			point ray_origin = camera->GetGrid()[y][x];
-
-			vec3 dir = ray_origin - camera->GetPosition();
-
-			rgb color = camera->SendRay(ray_origin, dir);
-
-			// +1 because the row starts with a one-byte filter method
-			int index = y * row_size + CHANNELS_PER_PIXEL * x + 1;
-
-			pixel_data[index] = color.r; index++;
-			pixel_data[index] = color.g; index++;
-			pixel_data[index] = color.b; index++;
-		}
-	}
-
-	FILE* image;
-	const char* path = "D:\\39331\\Code\\C++\\PathTracer\\images\\path_7.png";
-	
-	// create_image does fopen and fclose
-	image = create_image(pixel_data, path, width, height);
-
-	free(pixel_data);
-	delete camera;
 
 	return 0;
 }

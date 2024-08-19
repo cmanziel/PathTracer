@@ -1,23 +1,21 @@
 #include "Block.h"
 
-void setFacePlane(Block* block, uint8_t side);
-
 Block::Block()
-	: m_WorldPosition(vec3(0, 0, 0))
+	: m_WorldPosition(vec3(0, 0, 0)), m_SideLength(1.0)
 {
-	for (int i = 0; i < FACES_PER_BLOCK; i++)
-	{
-		setFacePlane(this, i);
-	}
+	SetFaces();
 }
 
 Block::Block(vec3 pos)
-	: m_WorldPosition(pos)
+	: m_WorldPosition(pos), m_SideLength(1.0)
 {
-	for (int i = 0; i < FACES_PER_BLOCK; i++)
-	{
-		setFacePlane(this, i);
-	}
+	SetFaces();
+}
+
+Block::Block(vec3 pos, double sideLength)
+	: m_WorldPosition(pos), m_SideLength(sideLength)
+{
+	SetFaces();
 }
 
 Block::~Block()
@@ -33,6 +31,11 @@ vec3 Block::GetWorldPosition() const
 	return m_WorldPosition;
 }
 
+/* TODO: change Hit method
+	* each face is a plane, so it has an origin and two generator vectors for every point in the face
+	* to check if the ray intersection point is inside the face edges check if at least one of the generators' coefficients is greater than the length of the side of the block
+*/
+
 bool Block::Hit(const Ray& ray, Interval tInterval, hit_record& hit_data)
 {
 	// loop through faces and call their Hit method
@@ -45,14 +48,30 @@ bool Block::Hit(const Ray& ray, Interval tInterval, hit_record& hit_data)
 	for (int i = 0; i < FACES_PER_BLOCK; i++)
 	{
 		face f = m_Faces[i];
+		vec3 genA = f.plane->m_Generators[0];
+		vec3 genB = f.plane->m_Generators[1];
+		vec3 fOrigin = f.plane->m_Origin;
 
 		if (f.plane->Hit(ray, tInterval, hit_data))
 		{
-			// a face plane might be hit by the ray but it should be checked if it was inside the face edges
-			vec3 edgeOffsets(1.0, 1.0, 1.0);
+			vec3 hitPoint = ray.at(hit_data.t);
 
-			if (hit_data.point[f.edges[0]] < f.plane->m_Origin[f.edges[0]] || hit_data.point[f.edges[0]] > f.plane->m_Origin[f.edges[0]] + edgeOffsets[f.edges[0]]
-				|| hit_data.point[f.edges[1]] < f.plane->m_Origin[f.edges[1]] || hit_data.point[f.edges[1]] > f.plane->m_Origin[f.edges[1]] + edgeOffsets[f.edges[1]])
+			double a, b;
+
+			int genAc, genBc;
+			// find which of the generators coordinates are suitable to compute the coefficients
+			for (int i = 0; i < 3; i++)
+			{
+				if (genA[i] != 0)
+					genAc = i;
+				if (genB[i] != 0)
+					genBc = i;
+			}
+
+			b = (hitPoint[genBc] * genA[genAc] - hitPoint[genAc] * genA[genBc] + fOrigin[genAc] * genA[genBc] - fOrigin[genBc] * genA[genAc]) / (genA[genAc] * genB[genBc] - genB[genAc]);
+			a = (hitPoint[genAc] - b * genB[genAc] - fOrigin[genAc]) / genA[genAc];
+
+			if (a < 0.0 || b < 0.0 || a > m_SideLength || b > m_SideLength)
 				continue;
 
 			is_hit = true;
@@ -68,148 +87,49 @@ bool Block::Hit(const Ray& ray, Interval tInterval, hit_record& hit_data)
 	if (!is_hit)
 		return false;
 
-	// set the ray hit data to the one of the closest point, otherwise it would be the one of the last point hit
 	hit_data = closest;
-
 	return true;
 }
 
-//bool Block::Hit(const Ray& ray, const Camera& camera, double ray_tmin, double ray_tmax, hit_record& hit_data)
-//{
-//	// check if ray intersects the block
-//	// 6 planes, see if ray intersects plane at a point which is inside the face edges
-//	// the sides are unit length
-//	// a block spans downwards on the y axis, frontwards on the z axis and rightwards on the x axis from it world position point
-//
-//	vec3 oc = m_WorldPosition - ray.origin();
-//
-//	if (dot(oc, camera.GetDirection()) < 0)
-//		return false;
-//
-//	hit_record closest;
-//	double smallest_t = 0.0; // initialized to 0.0 because it is less than the focal length
-//
-//	for (int i = 0; i < FACES_PER_BLOCK; i++)
-//	{
-//		face f = m_Faces[i];
-//
-//		double t = (f.origin[f.plane] - ray.origin()[f.plane]) / ray.direction()[f.plane];
-//
-//		if (t < ray_tmin || t > ray_tmax)
-//			return false;
-//
-//		point intersection = ray.at(t);
-//
-//		vec3 edgesOffsets = vec3(0.0, 0.0, 0.0);
-//		double edge1 = f.edges[0];
-//		double edge2 = f.edges[1];
-//
-//		edgesOffsets[edge1] = 1.0;
-//		edgesOffsets[edge2] = 1.0;
-//
-//		if (intersection[edge1] < f.origin[edge1] || intersection[edge1] > f.origin[edge1] + edgesOffsets[edge1]
-//			|| intersection[edge2] < f.origin[edge2] || intersection[edge2] > f.origin[edge2] + edgesOffsets[edge2])
-//			continue;
-//
-//		if (t < smallest_t || smallest_t == 0.0)
-//		{
-//			smallest_t = t;
-//			
-//		}
-//	}
-//
-//	hit_data = closest;
-//
-//	return true;
-//}
-
-/*
-* top
- 	gen1 = vec3(0.0, 0.0, 1.0);
-	gen2 = vec3(1.0, 0.0, 0.0);
-	origin = m_WorldPosition;
-
-* left
-	gen1 = vec3(0.0, -1.0, 0.0);
-	gen2 = vec3(0.0, 0.0, 1.0);
-	origin = m_WorldPosition
-
+/* how to initialize a face plane:
+	* for now just initialize a block whose top face is parllel to the xz plane
 */
-
-//double t = (origin.z - ray.origin().z) / ray.direction().z;
-
-//if (t < ray_tmin || t > ray_tmax)
-//	return false;
-
-//point intersection = ray.at(t);
-
-//if (intersection.x < m_WorldPosition.x || intersection.x > m_WorldPosition.x + 1.0)
-//	return false;
-
-//if (intersection.y < m_WorldPosition.y - 1.0 || intersection.y > m_WorldPosition.y)
-//	return false;
-
-//hit_data.t = t;
-//hit_data.point = intersection;
-//hit_data.normal = vec3(0.0, 0.0, 1.0); // normal to the front face of a block: vec3(0.0, 0.0, 1.0)
-
-void setFacePlane(Block* block, uint8_t side)
+void Block::SetFaces()
 {
-	face f = block->m_Faces[side];
-	//Plane* face = block->m_Faces[side];
-	vec3 blockPos = block->GetWorldPosition();
-	uint8_t edges[2];
+	// send origin and generators for each of the faces
+	// top face
+	vec3 origin = m_WorldPosition;
+	vec3 normal = vec3(0.0, 1.0, 0.0);
+	vec3 genA = vec3(1.0, 0.0, 0.0);
+	vec3 genB = vec3(0.0, 0.0, 1.0);
+	m_Faces[top].plane = new Plane(origin, normal, genA, genB);
 
-	vec3 faceNormal;
-	vec3 faceOrigin;
+	//bottom face
+	normal = -normal;
+	origin = origin + normal * m_SideLength;
+	m_Faces[bottom].plane = new Plane(origin, normal, genA, genB);
 
-	switch (side)
-	{
-		case top:
-		{
-			faceOrigin = blockPos;
-			faceNormal = vec3(0.0, 1.0, 0.0);
-			edges[0] = x;
-			edges[1] = z;
-		} break;
-		case bottom:
-		{
-			faceOrigin = blockPos + vec3(0.0, -1.0, 0.0);
-			faceNormal = vec3(0.0, -1.0, 0.0);
-			edges[0] = x;
-			edges[1] = z;
-		} break;
-		case left:
-		{
-			faceOrigin = blockPos + vec3(0.0, -1.0, 0.0);
-			faceNormal = vec3(-1.0, 0.0, 0.0);
-			edges[0] = z;
-			edges[1] = y;
-		} break;
-		case right:
-		{
-			faceOrigin = blockPos + vec3(1.0, -1.0, 0.0);
-			faceNormal = vec3(1.0, 0.0, 0.0);
-			edges[0] = z;
-			edges[1] = y;
-		} break;
-		case front:
-		{
-			faceOrigin = blockPos + vec3(0.0, -1.0, 1.0);
-			faceNormal = vec3(0.0, 0.0, 1.0);
-			edges[0] = x;
-			edges[1] = y;
-		} break;
-		case back:
-		{
-			faceOrigin = blockPos + vec3(0.0, -1.0, 0.0);
-			faceNormal = vec3(0.0, 0.0, -1.0);
-			edges[0] = x;
-			edges[1] = y;
-		} break;
-	}
+	// left face
+	normal = vec3(-1.0, 0.0, 0.0);
+	origin = m_WorldPosition;
+	genA = vec3(0.0, -1.0, 0.0);
+	genB = vec3(0.0, 0.0, 1.0);
+	m_Faces[left].plane = new Plane(origin, normal, genA, genB);
 
-	block->m_Faces[side].plane = new Plane(faceOrigin, faceNormal);
-	block->m_Faces[side].edges[0] = edges[0];
-	block->m_Faces[side].edges[1] = edges[1];
+	// right face
+	normal = -normal;
+	origin = origin + normal * m_SideLength;
+	m_Faces[right].plane = new Plane(origin, normal, genA, genB);
+
+	// back face
+	normal = vec3(0.0, 0.0, -1.0);
+	origin = m_WorldPosition;
+	genA = vec3(1.0, 0.0, 0.0);
+	genB = vec3(0.0, -1.0, 0.0);
+	m_Faces[back].plane = new Plane(origin, normal, genA, genB);
+
+	// front face
+	normal = -normal;
+	origin = origin + normal * m_SideLength;
+	m_Faces[front].plane = new Plane(origin, normal, genA, genB);
 }

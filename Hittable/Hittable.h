@@ -12,7 +12,7 @@ typedef struct
 {
 	point point;
 	vec3 normal;
-	float t;
+	double t;
 } hit_record;
 
 class Hittable

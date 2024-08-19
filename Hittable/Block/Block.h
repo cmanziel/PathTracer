@@ -25,7 +25,10 @@ class Block : public Hittable
 public:
 	Block();
 	Block(vec3 pos);
+	Block(vec3 pos, double sideLength);
 	~Block();
+
+	void SetFaces();
 
 	vec3 GetWorldPosition() const;
 
@@ -34,7 +37,7 @@ public:
 	face m_Faces[FACES_PER_BLOCK];
 private:
 	vec3 m_WorldPosition;
-	
+	double m_SideLength;
 
 	//face m_Faces[FACES_PER_BLOCK];
 };

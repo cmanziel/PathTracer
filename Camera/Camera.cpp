@@ -5,9 +5,10 @@ float aspect_ratio = 16.0 / 9;
 Camera::Camera(const char* path)
 	: m_ImageWidth(1000)
 {
-	m_Position = vec3(5, 5, -8.5);
-	//m_Direction = -m_Position;
-	m_Direction = vec3(-2.0, -1.0, 0.0);
+	//m_Position = vec3(5, 5, -8.5);
+	m_Position = vec3(-2.0, 3.0, 5.0);
+	m_Direction = -m_Position;
+	//m_Direction = vec3(0.0, 0.0, -1.0);
 	m_fov = 45.0;
 	m_FocalLength = 1.0;
 	m_NearToFarDistance = 99.0;
@@ -18,7 +19,7 @@ Camera::Camera(const char* path)
 
 	m_ImagePath = path;
 
-	m_ImageData = AllocPNGDataStream();
+	m_ImageData = AllocPNGDatastream();
 
 	if (m_ImageData == NULL)
 		throw std::exception("image data not allocated\n");
@@ -51,7 +52,7 @@ Camera::Camera(const char* path)
 	* this line is the viewport plane normal, move on this plane the correct distances to find the grid's upper left corner
 */
 
-unsigned char* Camera::AllocPNGDataStream()
+unsigned char* Camera::AllocPNGDatastream()
 {
 	// loop through grid, sent ray through every pixel, color the pixel
 	int row_size = CHANNELS_PER_PIXEL * m_ImageWidth + 1; // 1 byte for filter method

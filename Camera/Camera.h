@@ -26,7 +26,7 @@ public:
 
 	// reset viewportgrid on camera movement because the pixels' center coordinates will change
 	void CreateViewportGrid();
-	unsigned char* AllocPNGDataStream();
+	unsigned char* AllocPNGDatastream();
 
 	void Render(std::vector<Hittable*> world);
 

@@ -17,6 +17,7 @@ public:
 	double& operator[](const int i);
 
 	double length();
+	vec3 normalize(); // return a new normalized vector
 
 	double x;
 	double y;

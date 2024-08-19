@@ -79,6 +79,11 @@ double vec3::length()
 	return sqrt(x * x + y * y + z * z);
 }
 
+vec3 vec3::normalize()
+{
+	return *this / this->length();
+}
+
 // arguments are set as const so they are not modyfied but a new vec3 is instantiated and returned
 // its more useful to use this type of function definition instead of making it a member of the vec3 class
 // because then the order of the vector operands in the operation doesn't matter

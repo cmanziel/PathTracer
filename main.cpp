@@ -25,17 +25,21 @@ int main()
 		Camera camera(path);
 		camera.CreateViewportGrid();
 
-		Sphere* sphere = new Sphere(vec3(0, 1, -10.0), 1.0);
-		Plane* plane = new Plane(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
-		Block* block = new Block(vec3(0, 2, -8.0));
-		Sphere* sphere1 = new Sphere(vec3(0, 1, -5.0), 1.0);
+		//Sphere* sphere = new Sphere(vec3(0, 1, -10.0), 1.0);
+		//Plane* plane = new Plane(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+		//Block* block = new Block(vec3(0, 2, -8.0));
+		//Sphere* sphere1 = new Sphere(vec3(0, 1, -5.0), 1.0);
+
+		Block* block = new Block(vec3(0, 0, 1));
+
+		//Sphere* sphere = new Sphere(vec3(0, 1, 6.0), 1.0);
 
 		std::vector<Hittable*> objects;
 
-		objects.push_back(sphere);
-		objects.push_back(plane);
+		//objects.push_back(sphere);
+		//objects.push_back(plane);
 		objects.push_back(block);
-		objects.push_back(sphere1);
+		//objects.push_back(sphere1);
 
 		camera.Render(objects);
 

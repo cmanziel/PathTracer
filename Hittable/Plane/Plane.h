@@ -7,6 +7,8 @@ class Plane : public Hittable
 public:
 	Plane();
 	Plane(vec3 origin, vec3 normal);
+	Plane(vec3 origin, vec3 normal, vec3 genA, vec3 genB);
+
 
 	~Plane() = default;
 
@@ -14,6 +16,7 @@ public:
 
 	vec3 m_Origin;
 	vec3 m_Normal;
+	vec3 m_Generators[2];
 	double m_PlaneD;
 
 private:

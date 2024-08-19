@@ -7,11 +7,18 @@ Plane::Plane()
 	m_PlaneD = 0.0;
 }
 
+Plane::Plane(vec3 origin, vec3 normal, vec3 genA, vec3 genB)
+	: m_Origin(origin), m_Normal(normal)
+{
+	m_Generators[0] = genA;
+	m_Generators[1] = genB;
+
+	m_PlaneD = -(m_Normal.x * m_Origin.x + m_Normal.y * m_Origin.y + m_Normal.z * m_Origin.z);
+}
+
 Plane::Plane(vec3 origin, vec3 normal)
 	: m_Origin(origin), m_Normal(normal)
 {
-	// normal.x = a, normal.y = b, normal.z = c
-
 	m_PlaneD = -(m_Normal.x * m_Origin.x + m_Normal.y * m_Origin.y + m_Normal.z * m_Origin.z);
 }
 
